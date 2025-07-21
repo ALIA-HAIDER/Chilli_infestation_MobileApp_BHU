@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 
 // Import image using require
 const plantScan = require('../../assets/tryitnowimg.png');
 
 export default function TryItNow() {
-//   const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   
   return (
     <View style={styles.container}>
@@ -40,7 +40,7 @@ export default function TryItNow() {
           
           <TouchableOpacity 
             style={styles.button}
-            // onPress={() => navigation.navigate('Scan')}
+            onPress={() => navigation.navigate('Scan')}
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>

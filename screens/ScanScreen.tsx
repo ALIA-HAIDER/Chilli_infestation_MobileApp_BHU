@@ -7,22 +7,34 @@ import {
   StyleSheet, 
   Alert,
   ActivityIndicator,
-  Platform
+  Platform,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
-export default function ScanScreen({ }) {
-  const [image, setImage] = useState(null);
+// Define the navigation param types
+type RootStackParamList = {
+  Home: undefined;
+  Scan: undefined;
+  Result: { imageUri?: string };
+};
+
+type ScanScreenProps = NativeStackScreenProps<RootStackParamList, 'Scan'>;
+
+export default function ScanScreen({ navigation }: ScanScreenProps) {
+  const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     (async () => {
-      // Request camera and media library permissions
       if (Platform.OS !== 'web') {
+        // Fix permissions request code
         const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
         const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         
@@ -38,27 +50,39 @@ export default function ScanScreen({ }) {
   }, []);
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-    //   setImage(result.assets[0].uri);
+    // Fix the ImagePicker implementation
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+  
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
     }
   };
 
   const takePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: false,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-    //   setImage(result.assets[0].uri);
+    // Fix the camera implementation
+    try {
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+  
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
     }
   };
 
@@ -70,98 +94,112 @@ export default function ScanScreen({ }) {
 
     setAnalyzing(true);
     
-    // Simulate analysis (replace with actual API call)
+    // Simulate analysis
     setTimeout(() => {
       setAnalyzing(false);
-    //   navigation.navigate('Result');
+      navigation.navigate('Result', { imageUri: image });
     }, 2000);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-        \
+    <View style={styles.container}>
       <StatusBar style="dark" />
+      
+      {/* Navbar is fixed at top */}
+      <Navbar />
+      
+      {/* Main content in scrollable area */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Content area with proper padding */}
+        <View style={styles.contentContainer}>
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Chilli Disease Detection</Text>
+            <Text style={styles.subtitle}>
+              Upload an image of your chilli plant and get instant AI-powered analysis for diseases and pest infestations.
+            </Text>
+          </View>
 
-      {/* Title */}
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Chilli Disease Detection</Text>
-        <Text style={styles.subtitle}>
-          Upload an image of your chilli plant and get instant AI-powered analysis for diseases and pest infestations.
-        </Text>
-      </View>
+          {/* Image Preview Area */}
+          <View style={styles.uploadContainer}>
+            {image ? (
+              <View style={styles.previewContainer}>
+                <Image
+                  source={{ uri: image }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => setImage(null)}
+                >
+                  <Text style={styles.removeButtonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.placeholderContainer}>
+                <MaterialIcons name="image" size={60} color="#0A400C" style={{ opacity: 0.6 }} />
+                <Text style={styles.placeholderTitle}>Upload Chilli Leaf Image</Text>
+                <Text style={styles.placeholderSubtitle}>
+                  Take a photo or select from gallery
+                </Text>
+              </View>
+            )}
+          </View>
 
-      {/* Image Preview Area */}
-      <View style={styles.uploadContainer}>
-        {image ? (
-          <View style={styles.previewContainer}>
-            <Image
-              source={{ uri: image }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
+          {/* Buttons */}
+          <View style={styles.buttonGroup}>
             <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => setImage(null)}
+              style={styles.galleryButton}
+              onPress={pickImage}
             >
-              <Text style={styles.removeButtonText}>×</Text>
+              <MaterialCommunityIcons name="folder-image" size={22} color="black" />
+              <Text style={styles.buttonText}>Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cameraButton}
+              onPress={takePhoto}
+            >
+              <MaterialIcons name="camera-alt" size={22} color="white" />
+              <Text style={styles.cameraButtonText}>Camera</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <MaterialIcons name="image" size={60} color="#0A400C" style={{ opacity: 0.6 }} />
-            <Text style={styles.placeholderTitle}>Upload Chilli Leaf Image</Text>
-            <Text style={styles.placeholderSubtitle}>
-              Take a photo or select from gallery
-            </Text>
+
+          {/* Submit */}
+          <View style={styles.submitContainer}>
+            {image && !analyzing && (
+              <View style={styles.readyIndicator}>
+                <Text style={styles.readyText}>Ready to analyze your image</Text>
+              </View>
+            )}
+            
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (!image || analyzing) && styles.disabledButton
+              ]}
+              onPress={handleSubmit}
+              disabled={!image || analyzing}
+            >
+              {analyzing ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  {image ? "Analyze for Diseases" : "Upload Image to Continue"}
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
-
-      {/* Buttons */}
-      <View style={styles.buttonGroup}>
-        <TouchableOpacity
-          style={styles.galleryButton}
-          onPress={pickImage}
-        >
-          <MaterialCommunityIcons name="folder-image" size={22} color="black" />
-          <Text style={styles.buttonText}>Gallery</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cameraButton}
-          onPress={takePhoto}
-        >
-          <MaterialIcons name="camera-alt" size={22} color="white" />
-          <Text style={styles.cameraButtonText}>Camera</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Submit */}
-      <View style={styles.submitContainer}>
-        {image && !analyzing && (
-          <View style={styles.readyIndicator}>
-            <Text style={styles.readyText}>Ready to analyze your image</Text>
-          </View>
-        )}
+        </View>
         
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!image || analyzing) && styles.disabledButton
-          ]}
-          onPress={handleSubmit}
-          disabled={!image || analyzing}
-        >
-          {analyzing ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              {image ? "Analyze for Diseases" : "Upload Image to Continue"}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Footer at the bottom of scrollable content */}
+        <Footer />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -169,6 +207,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9f2',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1, // Important - ensures content can grow to fill space
+    paddingBottom: 20, // Space after the footer
+  },
+  contentContainer: {
     padding: 16,
   },
   titleContainer: {

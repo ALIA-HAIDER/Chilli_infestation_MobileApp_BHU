@@ -9,15 +9,26 @@ import {
   SafeAreaView
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
-export default function ResultScreen() {
-//   const navigation = useNavigation();
-  // Make sure to place leaf-preview.jpg in your assets folder
-//   const previewImage = require('../assets/leaf-preview.jpg');
+type RootStackParamList = {
+  Home: undefined;
+  Scan: undefined;
+  Result: { imageUri: string };
+};
+
+type ResultScreenProps = NativeStackScreenProps<RootStackParamList, 'Result'>;
+
+export default function ResultScreen({ navigation, route }: ResultScreenProps) {
+  // Get image URI from navigation params
+  const { imageUri } = route.params || {};
   
   return (
     <SafeAreaView style={styles.container}>
+      <Navbar />
+      
       <ScrollView 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -32,11 +43,17 @@ export default function ResultScreen() {
 
         {/* Image Preview */}
         <View style={styles.imageContainer}>
-          {/* <Image
-            source={previewImage}
-            style={styles.previewImage}
-            resizeMode="contain"
-          /> */}
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Text>No image available</Text>
+            </View>
+          )}
         </View>
 
         {/* Disease Info */}
@@ -92,17 +109,22 @@ export default function ResultScreen() {
         <View style={styles.buttonsContainer}>
           <TouchableOpacity 
             style={styles.scanAgainButton}
-            // onPress={() => navigation.navigate('Scan')}
+            onPress={() => navigation.navigate('Scan')}
           >
             <MaterialIcons name="refresh" size={20} color="white" />
             <Text style={styles.scanAgainButtonText}>Scan Again</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.saveButton}>
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={() => alert('Result saved successfully!')}
+          >
             <MaterialIcons name="save" size={20} color="black" />
             <Text style={styles.saveButtonText}>Save Result</Text>
           </TouchableOpacity>
         </View>
+        
+        <Footer />
       </ScrollView>
     </SafeAreaView>
   );
@@ -114,8 +136,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9f2',
   },
   contentContainer: {
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
     alignItems: 'center',
   },
   headingContainer: {
@@ -153,6 +175,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#f9f9f9',
+  },
+  noImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   infoContainer: {
     width: '100%',

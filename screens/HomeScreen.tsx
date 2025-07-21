@@ -1,12 +1,12 @@
 import React from 'react';
-import { ScrollView, View, Text, StatusBar } from 'react-native';
+import { ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/HomeCompo/Header';
 import HowItWorks from '../components/HomeCompo/HowItWorks';
-import TryItNow from 'components/HomeCompo/TryItNow';
-import WhyChooseUs from 'components/HomeCompo/WhyChooseUs';
-import Footer from 'components/Footer';
-import Navbar from 'components/Navbar';
+import TryItNow from '../components/HomeCompo/TryItNow'; // Fixed import path
+import WhyChooseUs from '../components/HomeCompo/WhyChooseUs'; // Fixed import path
+import Footer from '../components/Footer'; // Fixed import path
+import Navbar from '../components/Navbar'; // Fixed import path
 
 export default function HomeScreen() {
   return (

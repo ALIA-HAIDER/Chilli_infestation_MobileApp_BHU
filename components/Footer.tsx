@@ -1,9 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-// Import your BHU logo
-// const bhuLogo = require('../assets/bhu-logo.png');
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -17,7 +14,7 @@ const openLink: LinkOpener = (url: string): void => {
 };
 
   return (
-    <View style={styles.footer} className='footer'>
+    <View style={styles.footer}>
       {/* BHU Logo and Title */}
       <View style={styles.section}>
         {/* <Image 
@@ -84,7 +81,9 @@ const styles = StyleSheet.create({
   footer: {
     backgroundColor: '#0A400C',
     padding: 20,
-    alignItems: 'center',
+    marginTop: 20, // Add margin to separate from content
+    width: '100%', // Ensure full width
+    marginBottom: -20, // Adjust padding for better spacing
   },
   section: {
     marginBottom: 24,

@@ -1,82 +1,146 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ImageBackground,
+  Dimensions 
+} from 'react-native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const imgheader = require('../../assets/imgheader.png');
-const { width, height } = Dimensions.get('window');
+// Get screen dimensions for responsive layout
+const { width } = Dimensions.get('window');
 
-function Header() {
-  const insets = useSafeAreaInsets();
+export default function Header() {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   
+  // Function to handle Download button press
+  const handleDownload = () => {
+    alert('App download will be available soon!');
+  };
+
   return (
     <View style={styles.container}>
-      {/* Background Image */}
-      <Image
-        source={imgheader}
+      <ImageBackground 
+        source={require('../../assets/imgheader.png')} // Make sure this image exists in your assets folder
         style={styles.backgroundImage}
         resizeMode="cover"
-      />
+      >
+        <LinearGradient
+          colors={['rgba(5, 30, 5, 0.55)', 'rgba(5, 30, 5, 0.95)']}
 
-      {/* Dark Overlay - makes text more readable */}
-      <View style={styles.overlay} />
 
-      {/* Content */}
-      <View style={[styles.contentContainer, { paddingTop: insets.top }]}>
-        <Text style={styles.heading}>
-          Empowering Farmers, Protecting Crops
-        </Text>
-        
-        <Text style={styles.subheading}>
-          Scan and protect your crops with advanced chili disease detection.
-        </Text>
-      </View>
+          style={styles.overlay}
+        >
+          <View style={styles.content}>
+            <Text style={styles.subtitle}>AI-POWERED</Text>
+            <Text style={styles.title}>Chilli Disease Detection</Text>
+            
+            <Text style={styles.description}>
+              Instantly identify diseases in your chilli crops with our mobile AI tool. 
+              Take a photo and get immediate results and treatment recommendations.
+            </Text>
+            
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={styles.scanButton}
+                onPress={() => navigation.navigate('Scan' as never)}
+              >
+                <Text style={styles.scanButtonText}>Scan Now</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.downloadButton}
+                onPress={handleDownload}
+              >
+                <Text style={styles.downloadButtonText}>Download App</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: height * 0.6, // 60% of screen height for better proportion
-    backgroundColor: 'black',
-    position: 'relative',
+    width: '100%',
+    height: 500, // Adjust height as needed
   },
   backgroundImage: {
-    position: 'absolute',
     width: '100%',
     height: '100%',
   },
   overlay: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.5)', // Darker overlay for better text contrast
-  },
-  contentContainer: {
     flex: 1,
     justifyContent: 'center',
+    padding: 20,
+  },
+  content: {
     alignItems: 'center',
-    padding: 24, // Increased padding
-    maxWidth: 600, // Max width for better readability on larger devices
-    alignSelf: 'center',
   },
-  heading: {
-    color: 'white',
-    fontSize: 32, // Larger font size
+  subtitle: {
+    fontSize: 16,
+    color: '#E0E0E0',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16, // More space below heading
-    lineHeight: 40, // Better line height for readability
-    letterSpacing: 0.5, // Slight letter spacing for better appearance
-  },
-  subheading: {
     color: 'white',
-    fontSize: 18, // Larger subheading
     textAlign: 'center',
-    marginBottom: 28, // More space below
-    lineHeight: 24, // Better line height
-    fontWeight: '400', // Slightly bolder than normal
-    opacity: 0.9, // Slightly transparent for visual hierarchy
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 24,
+    maxWidth: 350,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  scanButton: {
+    backgroundColor: '#DCDCAA',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  scanButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0A400C',
+  },
+  downloadButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'white',
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  downloadButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
   },
 });
-
-export default Header;

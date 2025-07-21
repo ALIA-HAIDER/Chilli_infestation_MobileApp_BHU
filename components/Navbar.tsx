@@ -4,18 +4,19 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  Image, 
-  StatusBar,
   Platform,
   Animated
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { createShadow } from './shared/CrossPlatformShadow';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-//   const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [menuAnimation] = useState(new Animated.Value(0));
+  const insets = useSafeAreaInsets();
   
   const toggleMenu = () => {
     const toValue = isMenuOpen ? 0 : 1;
@@ -23,33 +24,28 @@ export default function Navbar() {
     Animated.timing(menuAnimation, {
       toValue,
       duration: 300,
-      useNativeDriver: true
+      useNativeDriver: false // Changed to false
     }).start();
     
     setIsMenuOpen(!isMenuOpen);
   };
 
   const handleDownload = () => {
-    // Placeholder for app download functionality
     alert('App download will be available soon!');
   };
 
   const menuHeight = menuAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 200] // Adjust height as needed
+    outputRange: [0, 200] as any
   });
 
   return (
-    <>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
-      {/* Main Navbar */}
-      <View style={styles.navbar}>
+    <View>
+      {/* Main Navbar - adjusted for safe areas */}
+      <View style={[styles.navbar, { paddingTop: insets.top }]}>
         {/* Left: Logos */}
         <View style={styles.logoContainer}>
-          {/* <Image source={require('../assets/logo1.png')} style={styles.logo} />
-          <Image source={require('../assets/logo2.png')} style={styles.logo} />
-          <Image source={require('../assets/logo3.png')} style={styles.logo} /> */}
+          <Text style={styles.logoText}>CropScan AI</Text>
         </View>
 
         {/* Right: Menu Button */}
@@ -65,19 +61,15 @@ export default function Navbar() {
           { 
             maxHeight: menuHeight,
             opacity: menuAnimation,
-            transform: [{
-              translateY: menuAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-20, 0]
-              })
-            }]
+            // Removed the transform that uses interpolate with native driver
           }
         ]}
       >
         <TouchableOpacity 
           style={styles.menuItem}
           onPress={() => {
-            // navigation.navigate('Home');
+            // @ts-ignore
+            navigation.navigate('Home');
             toggleMenu();
           }}
         >
@@ -87,27 +79,20 @@ export default function Navbar() {
         <TouchableOpacity 
           style={styles.menuItem}
           onPress={() => {
-            // You'd need to implement scroll to section functionality
-            toggleMenu();
-          }}
-        >
-          <Text style={styles.menuItemText}>How it Works</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => {
-            // navigation.navigate('Scan');
+            // @ts-ignore
+            navigation.navigate('Scan');
             toggleMenu();
           }}
         >
           <Text style={styles.menuItemText}>Scan Now</Text>
         </TouchableOpacity>
         
+        {/* Added About page link */}
         <TouchableOpacity 
           style={styles.menuItem}
           onPress={() => {
-            // navigation.navigate('About');
+            // @ts-ignore
+            navigation.navigate('About');
             toggleMenu();
           }}
         >
@@ -121,7 +106,7 @@ export default function Navbar() {
           <Text style={styles.downloadButtonText}>Download App</Text>
         </TouchableOpacity>
       </Animated.View>
-    </>
+    </View>
   );
 }
 
@@ -133,23 +118,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
     position: 'relative',
     zIndex: 50,
-    paddingTop: Platform.OS === 'ios' ? 44 : 12, // Adjust for iOS status bar
+    ...createShadow(4), // Using cross-platform shadow
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logo: {
-    height: 32,
-    width: 32,
-    marginRight: 8,
+  logoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0A400C',
   },
   menuButton: {
     padding: 8,
@@ -157,12 +137,8 @@ const styles = StyleSheet.create({
   menuDropdown: {
     backgroundColor: 'white',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
     zIndex: 40,
+    ...createShadow(6), // Using cross-platform shadow
   },
   menuItem: {
     paddingVertical: 14,
