@@ -210,10 +210,11 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    paddingBottom: 0,
   },
   scrollContent: {
     flexGrow: 1, // Important - ensures content can grow to fill space
-    paddingBottom: 20, // Space after the footer
+    paddingBottom: 0, // Space after the footer
   },
   contentContainer: {
     padding: 16,

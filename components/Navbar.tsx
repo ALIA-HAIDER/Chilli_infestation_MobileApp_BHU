@@ -36,7 +36,7 @@ export default function Navbar() {
 
   const menuHeight = menuAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 200] as any
+    outputRange: [0, 300] as any
   });
 
   return (

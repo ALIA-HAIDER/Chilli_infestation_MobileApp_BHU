@@ -230,11 +230,13 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    margin: 0,
+    padding: 0,
   },
   scrollContent: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
   headerCard: {
     backgroundColor: 'white',
@@ -247,6 +249,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     alignItems: 'center',
+    margin: 16,
   },
   mainTitle: {
     fontSize: 28,
@@ -271,6 +274,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    margin: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -369,6 +373,7 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 24,
     alignItems: 'center',
+    margin: 16,
   },
   ctaTitle: {
     fontSize: 22,

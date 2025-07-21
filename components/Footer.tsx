@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 20, // Add margin to separate from content
     width: '100%', // Ensure full width
-    marginBottom: -20, // Adjust padding for better spacing
+    marginBottom: 0, // Adjust padding for better spacing
   },
   section: {
     marginBottom: 24,

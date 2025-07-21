@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   headingContainer: {
     alignItems: 'center',
     marginBottom: 24,
+    marginTop: 20,
   },
   heading: {
     fontSize: 24,
@@ -184,9 +185,12 @@ const styles = StyleSheet.create({
   infoContainer: {
     width: '100%',
     marginBottom: 24,
+    margin: 10,
+    marginHorizontal: 20,
   },
   section: {
     marginBottom: 20,
+    marginHorizontal: 20,
   },
   sectionHeading: {
     fontSize: 18,
