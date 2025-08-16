@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { usePlantStore } from '../store/usePlantStore';
 
 // Define the navigation param types
 type RootStackParamList = {
@@ -30,11 +32,15 @@ type ScanScreenProps = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 export default function ScanScreen({ navigation }: ScanScreenProps) {
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [location, setLocationState] = useState<Location.LocationObject | null>(null);
+  const [locationStatus, setLocationStatus] = useState<string>('Getting location...');
+  
+  const { setLocation, submitPlantData, loading } = usePlantStore();
 
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
-        // Fix permissions request code
+        // Request camera and media library permissions
         const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
         const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         
@@ -45,9 +51,113 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
             [{ text: 'OK' }]
           );
         }
+
+        // Request location permissions
+        await requestLocationPermission();
       }
     })();
   }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      setLocationStatus('Requesting location permission...');
+      
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        setLocationStatus('Location permission denied');
+        Alert.alert(
+          'Location Permission Required',
+          'This app needs location access to provide better disease detection results based on your region.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Grant Permission', onPress: () => requestLocationPermission() }
+          ]
+        );
+        return;
+      }
+
+      // Get current location
+      await getCurrentLocation();
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      setLocationStatus('Location permission error');
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      setLocationStatus('Getting your location...');
+      
+      let currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.BestForNavigation, // Highest precision available
+      });
+      
+      setLocationState(currentLocation);
+      
+      // Get address from coordinates
+      let address = await Location.reverseGeocodeAsync({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+
+      if (address.length > 0) {
+        const addr = address[0];
+        
+        // Build more detailed location string
+        const locationParts = [];
+        
+        // Add street details if available
+        if (addr.streetNumber && addr.street) {
+          locationParts.push(`${addr.streetNumber} ${addr.street}`);
+        } else if (addr.street) {
+          locationParts.push(addr.street);
+        }
+        
+        // Add area details
+        if (addr.subregion) locationParts.push(addr.subregion);
+        if (addr.district) locationParts.push(addr.district);
+        else if (addr.city) locationParts.push(addr.city);
+        
+        // Add region/state and postal code
+        if (addr.region) locationParts.push(addr.region);
+        if (addr.postalCode) locationParts.push(addr.postalCode);
+        
+        const detailedAddress = locationParts.join(', ');
+        
+        // Add precise coordinates with accuracy
+        const lat = currentLocation.coords.latitude.toFixed(6);
+        const lng = currentLocation.coords.longitude.toFixed(6);
+        const accuracy = currentLocation.coords.accuracy ? ` ±${currentLocation.coords.accuracy.toFixed(0)}m` : '';
+        
+        // Combine detailed address with coordinates
+        const fullLocationString = `${detailedAddress} (${lat}, ${lng}${accuracy})`;
+        
+        setLocationStatus(` ${detailedAddress || `${lat}, ${lng}`}`);
+        setLocation(fullLocationString);
+      } else {
+        // Fallback to precise coordinates if reverse geocoding fails
+        const lat = currentLocation.coords.latitude.toFixed(6);
+        const lng = currentLocation.coords.longitude.toFixed(6);
+        const accuracy = currentLocation.coords.accuracy ? ` ±${currentLocation.coords.accuracy.toFixed(0)}m` : '';
+        const locationString = `${lat}, ${lng}${accuracy}`;
+
+        setLocationStatus(` ${lat}, ${lng}`);
+        setLocation(locationString);
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+      setLocationStatus('Unable to get location');
+      Alert.alert(
+        'Location Error',
+        'Unable to get your current location. You can still proceed without location data.',
+        [
+          { text: 'Retry', onPress: () => getCurrentLocation() },
+          { text: 'Continue without location', style: 'cancel' }
+        ]
+      );
+    }
+  };
 
   const pickImage = async () => {
     // Fix the ImagePicker implementation
@@ -101,6 +211,8 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
     }, 2000);
   };
 
+  
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -121,6 +233,26 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
             <Text style={styles.subtitle}>
               Upload an image of your chilli plant and get instant AI-powered analysis for diseases and pest infestations.
             </Text>
+            
+            {/* Location Status */}
+            <View style={styles.locationContainer}>
+              <MaterialIcons 
+                name="location-on" 
+                size={16} 
+                color={locationStatus.includes('Unable') || locationStatus.includes('denied') ? '#ff4444' : '#0A400C'} 
+              />
+              <Text style={[
+                styles.locationText,
+                { color: locationStatus.includes('Unable') || locationStatus.includes('denied') ? '#ff4444' : '#666' }
+              ]}>
+                {locationStatus}
+              </Text>
+              {locationStatus.includes('Unable') || locationStatus.includes('denied') ? (
+                <TouchableOpacity onPress={requestLocationPermission} style={styles.retryButton}>
+                  <MaterialIcons name="refresh" size={16} color="#0A400C" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
           </View>
 
           {/* Image Preview Area */}
@@ -373,5 +505,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: 'white',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    alignSelf: 'center',
+  },
+  locationText: {
+    fontSize: 12,
+    marginLeft: 4,
+    maxWidth: 200,
+  },
+  retryButton: {
+    marginLeft: 8,
+    padding: 4,
   },
 });
