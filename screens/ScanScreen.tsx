@@ -8,7 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
-  ScrollView
+  ScrollView,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,24 +17,33 @@ import * as Location from 'expo-location';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { usePlantStore } from '../store/usePlantStore';
 
 // Define the navigation param types
-type RootStackParamList = {
+type RootTabParamList = {
   Home: undefined;
   Scan: undefined;
+  About: undefined;
+};
+
+type RootStackParamList = {
+  Main: undefined;
   Result: { imageUri?: string };
 };
 
-type ScanScreenProps = NativeStackScreenProps<RootStackParamList, 'Scan'>;
+type ScanScreenProps = CompositeScreenProps<
+  BottomTabScreenProps<RootTabParamList, 'Scan'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export default function ScanScreen({ navigation }: ScanScreenProps) {
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [location, setLocationState] = useState<Location.LocationObject | null>(null);
   const [locationStatus, setLocationStatus] = useState<string>('Getting location...');
+  const [locationLoading, setLocationLoading] = useState(true);
   
   const { setLocation, submitPlantData, loading } = usePlantStore();
 
@@ -60,17 +70,19 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
 
   const requestLocationPermission = async () => {
     try {
+      setLocationLoading(true);
       setLocationStatus('Requesting location permission...');
       
       let { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
         setLocationStatus('Location permission denied');
+        setLocationLoading(false);
         Alert.alert(
           'Location Permission Required',
           'This app needs location access to provide better disease detection results based on your region.',
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancel', style: 'cancel', onPress: () => setLocationLoading(false) },
             { text: 'Grant Permission', onPress: () => requestLocationPermission() }
           ]
         );
@@ -80,20 +92,23 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
       // Get current location
       await getCurrentLocation();
     } catch (error) {
-      console.error('Error requesting location permission:', error);
+      // console.error('Error requesting location permission:', error);
       setLocationStatus('Location permission error');
+      setLocationLoading(false);
     }
   };
 
   const getCurrentLocation = async () => {
     try {
-      setLocationStatus('Getting your location...');
+      setLocationLoading(true);
+      setLocationStatus('Getting your precise location...');
       
       let currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.BestForNavigation, // Highest precision available
       });
       
       setLocationState(currentLocation);
+      setLocationStatus('Processing location data...');
       
       // Get address from coordinates
       let address = await Location.reverseGeocodeAsync({
@@ -133,8 +148,9 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
         // Combine detailed address with coordinates
         const fullLocationString = `${detailedAddress} (${lat}, ${lng}${accuracy})`;
         
-        setLocationStatus(` ${detailedAddress || `${lat}, ${lng}`}`);
+        setLocationStatus(`📍 ${detailedAddress || `${lat}, ${lng}`}`);
         setLocation(fullLocationString);
+        setLocationLoading(false);
       } else {
         // Fallback to precise coordinates if reverse geocoding fails
         const lat = currentLocation.coords.latitude.toFixed(6);
@@ -142,12 +158,14 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
         const accuracy = currentLocation.coords.accuracy ? ` ±${currentLocation.coords.accuracy.toFixed(0)}m` : '';
         const locationString = `${lat}, ${lng}${accuracy}`;
 
-        setLocationStatus(` ${lat}, ${lng}`);
+        setLocationStatus(`📍 ${lat}, ${lng}`);
         setLocation(locationString);
+        setLocationLoading(false);
       }
     } catch (error) {
-      console.error('Error getting location:', error);
+      // console.error('Error getting location:', error);
       setLocationStatus('Unable to get location');
+      setLocationLoading(false);
       Alert.alert(
         'Location Error',
         'Unable to get your current location. You can still proceed without location data.',
@@ -173,7 +191,7 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      // console.error('Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image');
     }
   };
@@ -191,34 +209,51 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
+      // console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo');
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!image) {
       Alert.alert('No Image', 'Please select or capture an image first.');
       return;
     }
+    if (!location) {
+      Alert.alert('No Location', 'Please allow location access to proceed.');
+      return;
+    }
 
+    // Create a string representation of the location for submitPlantData
+    const locationString = `${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}${location.coords.accuracy ? ` ±${location.coords.accuracy.toFixed(0)}m` : ''}`;
+    
+    console.log('Starting analysis, setting analyzing to true');
     setAnalyzing(true);
     
-    // Simulate analysis
-    setTimeout(() => {
-      setAnalyzing(false);
+    // Add a small delay to ensure the modal appears
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      console.log('Calling submitPlantData...');
+      // Call the store's submitPlantData function
+      await submitPlantData(image, locationString);
+
+      console.log('Analysis complete, navigating to result');
+      // Navigate to Result screen with the image URI
       navigation.navigate('Result', { imageUri: image });
-    }, 2000);
+      setAnalyzing(false);
+    } catch (error) {
+      console.log('Analysis failed:', error);
+      Alert.alert('Error', 'Failed to submit plant data. Please try again.');
+      setAnalyzing(false);
+    }
   };
 
   
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
-      {/* Navbar is fixed at top */}
-      <Navbar />
       
       {/* Main content in scrollable area */}
       <ScrollView 
@@ -236,11 +271,15 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
             
             {/* Location Status */}
             <View style={styles.locationContainer}>
-              <MaterialIcons 
-                name="location-on" 
-                size={16} 
-                color={locationStatus.includes('Unable') || locationStatus.includes('denied') ? '#ff4444' : '#0A400C'} 
-              />
+              {locationLoading ? (
+                <ActivityIndicator size="small" color="#0A400C" />
+              ) : (
+                <MaterialIcons 
+                  name="location-on" 
+                  size={16} 
+                  color={locationStatus.includes('Unable') || locationStatus.includes('denied') ? '#ff4444' : '#0A400C'} 
+                />
+              )}
               <Text style={[
                 styles.locationText,
                 { color: locationStatus.includes('Unable') || locationStatus.includes('denied') ? '#ff4444' : '#666' }
@@ -328,10 +367,27 @@ export default function ScanScreen({ navigation }: ScanScreenProps) {
           </View>
         </View>
         
-        {/* Footer at the bottom of scrollable content */}
-        <Footer />
       </ScrollView>
-    </View>
+
+      {/* Analysis Loading Modal */}
+      <Modal
+        visible={analyzing}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+        hardwareAccelerated={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#0A400C" />
+            <Text style={styles.analysisTitle}>Analyzing Your Plant</Text>
+            <Text style={styles.analysisNote}>
+              Using AI to detect diseases and provide recommendations...
+            </Text>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -525,5 +581,44 @@ const styles = StyleSheet.create({
   retryButton: {
     marginLeft: 8,
     padding: 4,
+  },
+  // Modal styles for analysis loading
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    margin: 20,
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    width: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  analysisTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0A400C',
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  analysisNote: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

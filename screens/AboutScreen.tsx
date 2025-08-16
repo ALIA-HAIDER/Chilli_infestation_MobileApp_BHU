@@ -8,17 +8,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 export default function AboutScreen() {
   // Fix: Add proper typing to navigation
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   
   return (
-    <View style={styles.container}>
-      <Navbar />
-      
+    <SafeAreaView style={styles.container}>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -217,9 +213,8 @@ export default function AboutScreen() {
           </TouchableOpacity>
         </View>
         
-        <Footer />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -6,16 +6,15 @@ import {
   ScrollView, 
   TouchableOpacity, 
   StyleSheet,
-  SafeAreaView
+  SafeAreaView,
+  ActivityIndicator
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { usePlantStore } from '../store/usePlantStore';
 
 type RootStackParamList = {
-  Home: undefined;
-  Scan: undefined;
+  Main: undefined;
   Result: { imageUri: string };
 };
 
@@ -24,11 +23,24 @@ type ResultScreenProps = NativeStackScreenProps<RootStackParamList, 'Result'>;
 export default function ResultScreen({ navigation, route }: ResultScreenProps) {
   // Get image URI from navigation params
   const { imageUri } = route.params || {};
+  const disease = usePlantStore((state) => state.disease);
+  const solution = usePlantStore((state) => state.solution);
+  const loading = usePlantStore((state) => state.loading);
+
+  // Show loading screen if still processing
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0A400C" />
+          <Text style={styles.loadingText}>Finalizing analysis...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   
   return (
     <SafeAreaView style={styles.container}>
-      <Navbar />
-      
       <ScrollView 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -36,7 +48,7 @@ export default function ResultScreen({ navigation, route }: ResultScreenProps) {
         {/* Heading */}
         <View style={styles.headingContainer}>
           <Text style={styles.heading}>
-            Detected: Leaf Curl Disease
+            Detected: {disease || 'Unknown Disease'}
           </Text>
           <Text style={styles.confidence}>(91% confidence)</Text>
         </View>
@@ -63,9 +75,10 @@ export default function ResultScreen({ navigation, route }: ResultScreenProps) {
               About the Disease
             </Text>
             <Text style={styles.sectionText}>
-              Leaf curl disease is caused by viruses that affect chilli crops,
+              {solution || 'No solution available.'}
+              {/* Leaf curl disease is caused by viruses that affect chilli crops,
               leading to curling, yellowing, and stunted growth. It reduces
-              yield drastically and spreads rapidly.
+              yield drastically and spreads rapidly. */}
             </Text>
           </View>
 
@@ -109,7 +122,7 @@ export default function ResultScreen({ navigation, route }: ResultScreenProps) {
         <View style={styles.buttonsContainer}>
           <TouchableOpacity 
             style={styles.scanAgainButton}
-            onPress={() => navigation.navigate('Scan')}
+            onPress={() => navigation.navigate('Main')}
           >
             <MaterialIcons name="refresh" size={20} color="white" />
             <Text style={styles.scanAgainButtonText}>Scan Again</Text>
@@ -124,7 +137,6 @@ export default function ResultScreen({ navigation, route }: ResultScreenProps) {
           </TouchableOpacity>
         </View>
         
-        <Footer />
       </ScrollView>
     </SafeAreaView>
   );
@@ -254,5 +266,17 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: '600',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#0A400C',
+    textAlign: 'center',
   },
 });
